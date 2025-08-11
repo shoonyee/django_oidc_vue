@@ -2,6 +2,8 @@
 
 A modern full-stack web application featuring a Django backend with OIDC authentication via U-M Shibboleth and a Vue 3 frontend with Vuetify.
 
+Decoupled implementation
+
 ## Features
 
 - **Backend**: Django REST API with OIDC authentication
@@ -68,12 +70,7 @@ A modern full-stack web application featuring a Django backend with OIDC authent
    python manage.py migrate
    ```
 
-6. **Create superuser (optional):**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-7. **Start Django server:**
+6. **Start Django server:**
    ```bash
    python manage.py runserver
    ```
@@ -137,11 +134,6 @@ The application uses OIDC (OpenID Connect) authentication with U-M Shibboleth. *
 
 The application is configured to work with U-M's official OIDC endpoints from [https://shibboleth.umich.edu/.well-known/openid-configuration](https://shibboleth.umich.edu/.well-known/openid-configuration):
 
-- **Issuer**: `https://shibboleth.umich.edu`
-- **Authorization Endpoint**: `https://shibboleth.umich.edu/idp/profile/oidc/authorize`
-- **Token Endpoint**: `https://shibboleth.umich.edu/idp/profile/oidc/token`
-- **User Info Endpoint**: `https://shibboleth.umich.edu/idp/profile/oidc/userinfo`
-- **JWKS Endpoint**: `https://shibboleth.umich.edu/oidc/keyset.jwk`
 
 ### Supported Scopes and Claims
 
@@ -153,16 +145,10 @@ Based on U-M's OIDC configuration, the application supports:
 
 Update the following environment variables in `backend/.env`:
 
-```bash
-OIDC_CLIENT_ID=your-app-client-id
-OIDC_CLIENT_SECRET=your-app-client-secret
-OIDC_AUTHORIZATION_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/authorize
-OIDC_TOKEN_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/token
-OIDC_USER_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/userinfo
-OIDC_JWKS_ENDPOINT=https://shibboleth.umich.edu/oidc/keyset.jwk
-```
 
 **Note**: You'll need to register your application with U-M IT to obtain the client ID and secret.
+
+**.env**, you can set **MODE** to **LOCAL** to use a mocked user for local development.
 
 ## Development
 
@@ -201,26 +187,3 @@ OIDC_JWKS_ENDPOINT=https://shibboleth.umich.edu/oidc/keyset.jwk
    ```
 2. Deploy the `dist/` folder to your web server
 3. Configure API proxy settings for production
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For questions or support, please contact the development team or submit an issue through the project repository.
-
-## U-M Shibboleth Integration Notes
-
-- **Security**: Uses RS256 signing algorithm as supported by U-M
-- **Scopes**: Includes U-M specific scopes for enhanced user information
-- **Claims**: Handles both standard OIDC and U-M specific user attributes
-- **Compliance**: Follows U-M's OIDC implementation standards
