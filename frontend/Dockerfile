@@ -20,8 +20,9 @@ RUN apk add --no-cache nginx
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G appgroup -g appgroup appuser
 
-# Copy built app to nginx directory
-RUN cp -r dist/* /usr/share/nginx/html/
+# Create nginx html directory and copy built app
+RUN mkdir -p /usr/share/nginx/html && \
+    cp -r dist/* /usr/share/nginx/html/
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
