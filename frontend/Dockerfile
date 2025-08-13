@@ -27,8 +27,8 @@ RUN mkdir -p /usr/share/nginx/html && \
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create necessary directories with proper permissions for non-root user
-RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx && \
+# Create all necessary directories with proper permissions for non-root user
+RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi && \
     chown -R appuser:appgroup /var/cache/nginx /var/log/nginx /tmp/nginx /usr/share/nginx/html && \
     chmod -R 755 /var/cache/nginx /var/log/nginx /tmp/nginx /usr/share/nginx/html
 
