@@ -32,6 +32,9 @@ RUN mkdir -p /var/cache/nginx /var/log/nginx /tmp/nginx /tmp/nginx/client_body /
     chown -R appuser:appgroup /var/cache/nginx /var/log/nginx /tmp/nginx /usr/share/nginx/html && \
     chmod -R 755 /var/cache/nginx /var/log/nginx /tmp/nginx /usr/share/nginx/html
 
+# Remove default nginx configuration that might cause permission issues
+RUN rm -f /etc/nginx/conf.d/default.conf
+
 # Switch to non-root user
 USER appuser
 
