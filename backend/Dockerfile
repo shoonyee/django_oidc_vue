@@ -36,7 +36,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/api/public/health_check/ || exit 1
 
 # Start the application with all necessary setup commands
-CMD python manage.py migrate --noinput && \
-    python manage.py collectstatic --noinput && \
-    echo "Starting Django server on port 8080..." && \
-    python manage.py runserver 0.0.0.0:8080
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8080"]
