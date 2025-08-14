@@ -16,7 +16,9 @@ class Model1ViewSet(viewsets.ModelViewSet):
     """
     API endpoint for Model1 - requires authentication
     """
-    queryset = Model1.objects.all()
+    def get_queryset(self):
+        return Model1.objects.all()
+    
     serializer_class = Model1Serializer
     permission_classes = [IsAuthenticated]
 
@@ -70,7 +72,9 @@ class Model2ViewSet(viewsets.ModelViewSet):
     """
     API endpoint for Model2 - requires authentication
     """
-    queryset = Model2.objects.all()
+    def get_queryset(self):
+        return Model2.objects.all()
+    
     serializer_class = Model2Serializer
     permission_classes = [IsAuthenticated]
 
@@ -311,7 +315,9 @@ class ContactViewSet(viewsets.ModelViewSet):
     """
     API endpoint for Contact - no authentication required for creation
     """
-    queryset = Contact.objects.all()
+    def get_queryset(self):
+        return Contact.objects.all()
+    
     serializer_class = ContactSerializer
     
     def get_permissions(self):

@@ -37,7 +37,7 @@ media/
 static/
 
 # Environment files
-.env
+# .env  # Commented out to allow .env file in container
 .env.local
 .env.development.local
 .env.test.local
