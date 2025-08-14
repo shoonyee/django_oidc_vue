@@ -3,7 +3,7 @@
 
   WORKDIR /app
   
-  # Install dependencies (using package-lock.json for consistency)
+  # Install dependencies 
   COPY package*.json ./
   RUN npm ci --only=production
   
@@ -14,7 +14,7 @@
   # --- Production Stage ---
   FROM nginx:alpine
   
-  # Set environment variables for OpenShift detection (good practice)
+  # Set environment variables for OpenShift detection
   ENV NGINX_PORT=8088
   
   # Copy built app to Nginx directory
@@ -27,13 +27,13 @@
   RUN mkdir -p /tmp/nginx /var/cache/nginx \
       && chmod -R g=u /usr/share/nginx/html /tmp/nginx /var/cache/nginx /tmp
   
-  # Remove default Nginx site configs (good hygiene, already handled in your nginx.conf)
+  # Remove default Nginx site configs 
   RUN rm -rf /etc/nginx/conf.d/* /etc/nginx/default.d/*
   
   # Expose non-privileged port for OpenShift
   EXPOSE 8088
   
-  # Healthcheck for OpenShift/Kubernetes (make sure your /health endpoint works!)
+  # Healthcheck for OpenShift/Kubernetes
   HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8088/health || exit 1
   
