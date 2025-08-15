@@ -13,6 +13,13 @@ const routes = [
     component: Home
   },
   {
+    path: '/health',
+    name: 'Health',
+    component: {
+      template: '<div>OK</div>'
+    }
+  },
+  {
     path: '/models',
     name: 'Models',
     component: Models
