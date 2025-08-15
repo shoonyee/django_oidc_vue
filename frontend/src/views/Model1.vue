@@ -223,6 +223,7 @@ export default {
         await axios.put(`/api/model1/${editingEntry.value.id}/`, editingEntry.value)
         await fetchEntries()
         editDialog.value = false
+        editingEntry.value = {}
       } catch (error) {
         console.error('Error updating entry:', error)
       } finally {
@@ -244,6 +245,7 @@ export default {
       }
     }
     
+    // Fetch entries on component mount
     onMounted(() => {
       fetchEntries()
     })
@@ -257,6 +259,7 @@ export default {
       newEntry,
       headers,
       filteredEntries,
+      fetchEntries,
       createEntry,
       editEntry,
       updateEntry,

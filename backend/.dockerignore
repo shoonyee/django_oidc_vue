@@ -1,25 +1,27 @@
+# Git
+.git
+.gitignore
+
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+__pycache__
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
 
 # Virtual environments
 venv/
@@ -28,22 +30,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-static/
-
-# Environment files
-# .env  # Commented out to allow .env file in container
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
@@ -59,54 +46,15 @@ static/
 ehthumbs.db
 Thumbs.db
 
-# Git
-.git/
-.gitignore
 
-# Docker
-Dockerfile
-.dockerignore
+# Logs
+logs/
+*.log
 
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.tox/
-.nox/
-coverage.xml
-*.cover
-.hypothesis/
+# Media and static files (will be collected during build)
+media/
+static/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Database
+*.sqlite3
+*.db

@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: dockercompose/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ..:/app     # Sync the entire project directory with the container
+      - /app/venv   # Exclude virtual environment from sync
+      - /app/.git   # Exclude git directory from sync
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONPATH=/app
+    command: python manage.py runserver 0.0.0.0:8080
+    restart: unless-stopped
+    env_file:
+      - ../.env

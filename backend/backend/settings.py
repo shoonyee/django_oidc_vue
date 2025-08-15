@@ -1,12 +1,27 @@
 import os
+import sys
 from pathlib import Path
 from decouple import config
 
-# Global application mode
-MODE = config('MODE', default='LOCAL')  # LOCAL or PROD
+# Try to import database drivers and configure them if available
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+    print("🐬 Using PyMySQL as MySQL driver")
+except ImportError:
+    print("🐬 MySQL driver not available")
+
+try:
+    import psycopg2
+    print("🐘 PostgreSQL driver (psycopg2) available")
+except ImportError:
+    print("🐘 PostgreSQL driver not available")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Global application mode
+MODE = config('MODE', default='LOCAL')  # LOCAL or PROD
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
@@ -14,7 +29,15 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.umich.edu']
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '.umich.edu',
+    '172.17.0.1',  # Docker bridge network gateway
+    '172.18.0.1',  # Alternative Docker bridge network
+    '172.19.0.1',  # Alternative Docker bridge network
+    'host.docker.internal',  # Docker host machine
+]
 
 # Application definition - conditional based on MODE
 if MODE == 'PROD':
@@ -177,8 +200,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:8088",
+    "http://127.0.0.1:8088",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
@@ -187,8 +210,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings for local development
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:8088",
+    "http://127.0.0.1:8088",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]

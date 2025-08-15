@@ -1,11 +1,17 @@
 #!/bin/bash
 
-# Full Stack App Startup Script
-echo "🚀 Starting Full Stack Application..."
+# Full Stack App Startup Script with Docker
+echo "🚀 Starting Full Stack Application with Docker..."
 
-# Check if Python 3 is available
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is not installed. Please install Python 3 first."
+# Check if Docker is available
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker is not installed. Please install Docker first."
+    exit 1
+fi
+
+# Check if Docker daemon is running
+if ! docker info &> /dev/null; then
+    echo "❌ Docker daemon is not running. Please start Docker first."
     exit 1
 fi
 
@@ -21,135 +27,84 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-# Start Django Backend
+echo "✅ Environment check passed"
+
+# Start Backend
 echo "🐍 Starting Django Backend..."
-cd backend
+cd backend/dockercompose
 
-# Check if virtual environment exists, create if not
-if [ ! -d "venv" ]; then
-    echo "📦 Creating Python virtual environment..."
-    python3 -m venv venv
-fi
-
-# Activate virtual environment
-echo "🔧 Activating virtual environment..."
-source venv/bin/activate
-
-# Install/update requirements
-echo "📥 Installing Python dependencies..."
-pip install -r requirements.txt
-
-# Check if .env file exists, create from example if not
-if [ ! -f ".env" ]; then
-    echo "⚙️  Creating .env file from env.example..."
-    if [ -f "env.example" ]; then
-        cp env.example .env
-        echo "✅ .env file created. Please update with your settings if needed."
+# Check if .env file exists
+if [ ! -f "../.env" ]; then
+    echo "⚠️  No .env file found in backend directory. Creating from env.example..."
+    if [ -f "../env.example" ]; then
+        cp ../env.example ../.env
+        echo "✅ .env file created from env.example. Please update with your settings if needed."
     else
-        echo "⚠️  No env.example found. Creating basic .env file..."
-        echo "SECRET_KEY=django-insecure-change-this-in-production" > .env
-        echo "DEBUG=True" >> .env
-        echo "MODE=LOCAL" >> .env
+        echo "❌ No env.example found. Please create a .env file with your database configuration."
+        exit 1
     fi
 fi
 
-# Set default mode to LOCAL if not specified
-if ! grep -q "MODE=" .env; then
-    echo "MODE=LOCAL" >> .env
+# Start backend services
+echo "🔧 Starting backend services..."
+docker compose up -d
+
+# Wait for backend to be ready
+echo "⏳ Waiting for backend to be ready..."
+sleep 10
+
+# Check backend health
+echo "🔍 Checking backend health..."
+if curl -s http://localhost:8080/api/public/health_check/ > /dev/null; then
+    echo "✅ Backend is healthy and running on port 8080"
+else
+    echo "⚠️  Backend health check failed, but continuing..."
 fi
 
-# Run migrations
-echo "🗄️  Running database migrations..."
-python3 manage.py makemigrations
-python3 manage.py migrate
+# Start Frontend
+echo "🎨 Starting Vue.js Frontend..."
+cd ../../frontend
 
-# Create superuser if none exists
-echo "👤 Checking for superuser..."
-python3 manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(is_superuser=True).exists():
-    print('Creating superuser...')
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-    print('Superuser created: admin/admin123')
-else:
-    print('Superuser already exists')
-"
-
-# Start Django server
-echo "🌐 Starting Django server on http://localhost:8000..."
-python3 manage.py runserver &
-BACKEND_PID=$!
-cd ..
-
-# Wait for backend to start
-echo "⏳ Waiting for backend to start..."
-sleep 5
-
-# Check if backend is running
-if ! curl -s http://localhost:8000/api/public/health_check/ > /dev/null; then
-    echo "❌ Backend failed to start. Check the logs above."
-    kill $BACKEND_PID 2>/dev/null
-    exit 1
+# Check if node_modules exists, install if not
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing frontend dependencies..."
+    npm install
 fi
 
-echo "✅ Backend is running at http://localhost:8000"
-
-# Start Vue Frontend
-echo "⚛️  Starting Vue Frontend..."
-cd frontend
-
-# Install/update dependencies
-echo "📥 Installing Node.js dependencies..."
-npm install
-
-# Start development server
-echo "🌐 Starting Vue dev server on http://localhost:3000..."
+# Start frontend development server
+echo "🔧 Starting frontend development server..."
 npm run dev &
 FRONTEND_PID=$!
-cd ..
 
-# Wait for frontend to start
-echo "⏳ Waiting for frontend to start..."
+# Wait for frontend to be ready
+echo "⏳ Waiting for frontend to be ready..."
 sleep 5
 
-# Check if frontend is running
-if ! curl -s http://localhost:3000 > /dev/null; then
-    echo "❌ Frontend failed to start. Check the logs above."
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
-    exit 1
+# Check frontend health
+echo "🔍 Checking frontend health..."
+if curl -s http://localhost:8088/ > /dev/null; then
+    echo "✅ Frontend is healthy and running on port 8088"
+else
+    echo "⚠️  Frontend health check failed, but continuing..."
 fi
 
-echo "✅ Frontend is running at http://localhost:3000"
-
-# Display status
 echo ""
-echo "🎉 Both services are running successfully!"
+echo "🎉 Full Stack Application Started Successfully!"
 echo ""
-echo "📍 Backend API: http://localhost:8000"
-echo "📍 Frontend App: http://localhost:3000"
-echo "📍 Admin Panel: http://localhost:8000/admin (admin/admin123)"
-echo "📍 API Docs: http://localhost:8000/api/"
+echo "📱 Services:"
+echo "   - Frontend: http://localhost:8088"
+echo "   - Backend API: http://localhost:8080"
+echo "   - Backend Admin: http://localhost:8080/admin/"
 echo ""
-echo "🔧 Current Mode: $(cd backend && source venv/bin/activate && python3 manage.py shell -c "from django.conf import settings; print(getattr(settings, 'MODE', 'LOCAL'))")"
+echo "🔧 Development Commands:"
+echo "   - View backend logs: cd backend/dockercompose && docker compose logs -f"
+echo "   - View frontend logs: The frontend is running in the foreground"
+echo "   - Stop all services: ./stop.sh"
 echo ""
-echo "💡 To switch modes:"
-echo "   - LOCAL mode: Edit backend/.env and set MODE=LOCAL"
-echo "   - PROD mode: Edit backend/.env and set MODE=PROD"
+echo "📝 Notes:"
+echo "   - Frontend runs on port 8088 for development"
+echo "   - Backend runs on port 8080"
+echo "   - API calls from frontend are automatically proxied to backend"
+echo "   - Frontend uses hot-reloading for development"
+echo "   - Frontend process ID: $FRONTEND_PID"
 echo ""
-echo "🛑 Press Ctrl+C to stop both services"
-
-# Function to cleanup on exit
-cleanup() {
-    echo ""
-    echo "🛑 Stopping services..."
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
-    echo "✅ Services stopped"
-    exit 0
-}
-
-# Set trap for cleanup
-trap cleanup INT TERM
-
-# Wait for user to stop
-wait

@@ -112,30 +112,19 @@ export const useAuthStore = defineStore('auth', () => {
   const mockLogout = async () => {
     try {
       await axios.post('/api/auth/mock_logout/', {}, { withCredentials: true })
-      console.log('Mock logout successful')
-      
-      // Clear local state
-      user.value = null
-      isAuthenticated.value = false
-      
+      console.log('✅ Mock logout successful')
     } catch (error) {
-      console.error('Mock logout failed:', error)
+      console.error('❌ Mock logout failed:', error)
     }
-  }
-
-  const handleAuthCallback = async () => {
-    // This will be called after OIDC redirect back to the app
-    await checkAuthStatus()
   }
 
   return {
     user,
     isAuthenticated,
     loading,
+    checkAuthStatus,
     login,
     logout,
-    checkAuthStatus,
-    handleAuthCallback,
     mockLogin,
     mockLogout
   }

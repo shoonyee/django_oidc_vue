@@ -7,4 +7,6 @@ requests==2.31.0
 python-decouple==3.8
 gunicorn==21.2.0
 whitenoise==6.6.0
-mysqlclient==2.2.0
+# Database drivers - cross-platform compatible
+PyMySQL==1.1.0  # MySQL driver (pure Python)
+psycopg2-binary==2.9.7  # PostgreSQL driver (binary, works everywhere)
