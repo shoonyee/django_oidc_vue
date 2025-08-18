@@ -1,14 +1,8 @@
-FROM node:22-alpine AS builder
+# Frontend Dockerfile for OpenShift deployment
+# IMPORTANT: Build the dist folder locally first with 'npm run build'
+# This Dockerfile only packages the built files with nginx
 
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-
-# Copy source code and build
-COPY . .
-RUN npm run build
-
-# Production stage
+# Production stage - only nginx, no build process
 FROM nginx:alpine
 
 # Set environment variables for OpenShift
@@ -17,8 +11,9 @@ ENV NGINX_PORT=8088
 # Install wget for health checks
 RUN apk add --no-cache wget
 
-# Copy built app to Nginx directory
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy the locally built dist folder to nginx directory
+# NOTE: This requires running 'npm run build' locally first
+COPY dist/ /usr/share/nginx/html/
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf

@@ -100,6 +100,31 @@ The backend will be available at `http://localhost:8000`
    npm run dev
    ```
 
+### Frontend Production Build & Deployment
+
+For OpenShift deployment, the frontend must be built locally first:
+
+1. **Build production bundle:**
+   ```bash
+   cd frontend
+   npm run build
+   ```
+
+2. **Build Docker image:**
+   ```bash
+   docker build -t frontend-openshift .
+   ```
+
+3. **Or use the automated script:**
+   ```bash
+   cd frontend
+   chmod +x build-and-deploy.sh
+   ./build-and-deploy.sh
+   ```
+
+**Important**: The Dockerfile expects the `dist/` folder to exist from `npm run build`. No build process happens inside the container.
+   ```
+
 The frontend will be available at `http://localhost:3000`
 
 ## Database Configuration
