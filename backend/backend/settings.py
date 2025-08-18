@@ -33,10 +33,6 @@ ALLOWED_HOSTS = [
     'localhost', 
     '127.0.0.1', 
     '.umich.edu',
-    '172.17.0.1',  # Docker bridge network gateway
-    '172.18.0.1',  # Alternative Docker bridge network
-    '172.19.0.1',  # Alternative Docker bridge network
-    'host.docker.internal',  # Docker host machine
 ]
 
 # Application definition - conditional based on MODE
