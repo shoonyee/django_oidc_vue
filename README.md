@@ -2,7 +2,7 @@
 
 A modern full-stack web application featuring a Django backend with OIDC authentication via U-M Shibboleth and a Vue 3 frontend with Vuetify.
 
-Decoupled implementation
+Decoupled implementation with separate backend and frontend containers.
 
 ## Features
 
@@ -17,34 +17,80 @@ Decoupled implementation
 ## Project Structure
 
 ```
-├── backend/                 # Django backend application
-│   ├── backend/            # Django project settings
-│   ├── api/                # API app with models and views
-│   ├── manage.py           # Django management script
-│   ├── .env                # Environment configuration (database, OIDC, etc.)
-│   └── requirements.txt    # Python dependencies
-├── frontend/               # Vue.js frontend application
-│   ├── src/                # Source code
-│   │   ├── views/          # Vue components
-│   │   ├── stores/         # Pinia state management
-│   │   └── router/         # Vue Router configuration
-│   ├── package.json        # Node.js dependencies
-│   └── vite.config.js      # Vite configuration
-└── README.md               # This file
+├── backend/                    # Django backend application
+│   ├── backend/               # Django project settings
+│   ├── api/                   # API app with models and views
+│   ├── Dockerfile             # Production deployment to OpenShift
+│   ├── dockercompose/         # Local development with Docker Compose
+│   │   ├── Dockerfile         # Development Dockerfile
+│   │   └── docker-compose.yml # Docker Compose configuration
+│   ├── manage.py              # Django management script
+│   ├── .env                   # Environment configuration (database, OIDC, etc.)
+│   └── requirements.txt       # Python dependencies
+├── frontend/                  # Vue.js frontend application
+│   ├── src/                   # Source code
+│   │   ├── views/             # Vue components
+│   │   ├── stores/            # Pinia state management
+│   │   └── router/            # Vue Router configuration
+│   ├── Dockerfile             # Production deployment to OpenShift
+│   ├── package.json           # Node.js dependencies
+│   └── vite.config.js         # Vite configuration
+├── start.sh                   # Start both backend and frontend for local development
+├── stop.sh                    # Stop both backend and frontend
+└── README.md                  # This file
 ```
 
 ## Prerequisites
 
-- Python 3.8+
-- Node.js 16+
-- npm or yarn
-- Docker and Docker Compose
-- Access to U-M Shibboleth (for OIDC authentication)
-- External MySQL or PostgreSQL database server
+- **Python 3.8+**
+- **Node.js 16+** and npm
+- **Docker and Docker Compose** (for containerized development)
+- **External MySQL or PostgreSQL database server**
+- **Access to U-M Shibboleth** (for OIDC authentication in production)
 
-## Quick Start
+## Local Development
 
-### Backend Setup
+### Option 1: Using Start/Stop Scripts (Recommended)
+
+The easiest way to run both backend and frontend for local development:
+
+```bash
+# Start both backend (Docker Compose) and frontend (npm dev server)
+./start.sh
+
+# Access the application:
+# - Frontend: http://localhost:8088
+# - Backend API: http://localhost:8080
+
+# Stop all services
+./stop.sh
+```
+
+**What `start.sh` does:**
+1. Starts backend using Docker Compose from `backend/dockercompose/`
+2. Runs database migrations automatically
+3. Starts frontend using `npm run dev` on port 8088
+
+**What `stop.sh` does:**
+1. Stops backend Docker Compose services
+2. Stops frontend npm dev server
+
+### Option 2: Using Docker Compose Manually
+
+```bash
+# Start backend
+cd backend/dockercompose
+docker compose up -d
+
+# In another terminal, start frontend
+cd frontend
+npm install  # First time only
+npm run dev
+```
+
+### Option 3: Native Development (Without Docker)
+
+#### Backend Setup
 
 1. **Navigate to backend directory:**
    ```bash
@@ -65,25 +111,20 @@ Decoupled implementation
 4. **Set up environment variables:**
    ```bash
    cp env.example .env
-   # Edit .env with your database and U-M OIDC configuration
+   # Edit .env with your database and OIDC configuration
    ```
 
-5. **Configure external database connection** (see Database Configuration section below)
-
-6. **Run migrations:**
+5. **Run migrations:**
    ```bash
-   python manage.py makemigrations
    python manage.py migrate
    ```
 
-7. **Start Django server:**
+6. **Start Django server:**
    ```bash
-   python manage.py runserver
+   python manage.py runserver 0.0.0.0:8080
    ```
 
-The backend will be available at `http://localhost:8000`
-
-### Frontend Setup
+#### Frontend Setup
 
 1. **Navigate to frontend directory:**
    ```bash
@@ -100,36 +141,11 @@ The backend will be available at `http://localhost:8000`
    npm run dev
    ```
 
-### Frontend Production Build & Deployment
-
-For OpenShift deployment, the frontend must be built locally first:
-
-1. **Build production bundle:**
-   ```bash
-   cd frontend
-   npm run build
-   ```
-
-2. **Build Docker image:**
-   ```bash
-   docker build -t frontend-openshift .
-   ```
-
-3. **Or use the automated script:**
-   ```bash
-   cd frontend
-   chmod +x build-and-deploy.sh
-   ./build-and-deploy.sh
-   ```
-
-**Important**: The Dockerfile expects the `dist/` folder to exist from `npm run build`. No build process happens inside the container.
-   ```
-
-The frontend will be available at `http://localhost:3000`
+The frontend will be available at `http://localhost:8088`
 
 ## Database Configuration
 
-The application supports connecting to external MySQL or PostgreSQL databases. Configure your database connection in the `backend/.env` file.
+The application connects to external MySQL or PostgreSQL databases. Configure your connection in `backend/.env`.
 
 ### MySQL Configuration
 
@@ -143,8 +159,6 @@ DB_HOST=your_mysql_server_host
 DB_PORT=3306
 ```
 
-**Required Dependencies**: The `requirements.txt` includes `PyMySQL` for MySQL connectivity.
-
 ### PostgreSQL Configuration
 
 ```bash
@@ -157,11 +171,9 @@ DB_HOST=your_postgresql_server_host
 DB_PORT=5432
 ```
 
-**Required Dependencies**: The `requirements.txt` includes `psycopg2-binary` for PostgreSQL connectivity.
+### Complete .env File Structure
 
-### Environment Variables
-
-Create a `backend/.env` file with the following structure:
+Create `backend/.env` with the following:
 
 ```bash
 # Django Settings
@@ -169,7 +181,7 @@ SECRET_KEY=your-secret-key-here
 DEBUG=True
 
 # Application Mode
-MODE=LOCAL  # or PROD for production with OIDC
+MODE=LOCAL  # Use LOCAL for development with mock auth, PROD for production with OIDC
 
 # Database Configuration - Choose ONE database engine
 DB_ENGINE=mysql  # or postgresql
@@ -194,41 +206,321 @@ CORS_ALLOWED_ORIGINS=http://localhost:8088,http://127.0.0.1:8088,http://localhos
 
 # Email Configuration
 DEFAULT_FROM_EMAIL=noreply@example.com
-ADMIN_EMAILS=admin@example.com,admin2@example.com
+ADMIN_EMAILS=admin@example.com
 ```
 
-### Database Connection Notes
+**Important Notes:**
+- The application connects to **external databases only** - no local database files are created
+- Ensure your database server allows connections from your application server
+- Use `MODE=LOCAL` for development (bypasses OIDC and uses mock authentication)
 
-- **External Database Only**: The application connects to existing external databases, it does not create local database files
-- **No SQLite**: For production use, always use external MySQL or PostgreSQL
-- **Connection Security**: Ensure your database server allows connections from your application server
-- **Environment Isolation**: Use different `.env` files for different environments (development, staging, production)
+## OpenShift Deployment
 
-## Docker Deployment
+This project can be deployed to OpenShift directly from the GitHub repository. Since both backend and frontend are in the same repository but in different subdirectories, they need to be deployed as **two separate apps**.
 
-### Using Docker Compose
+### Prerequisites
 
-1. **Start backend with external database:**
-   ```bash
-   cd backend/dockercompose
-   docker compose up -d
-   ```
+1. **OpenShift CLI**: Install `oc` command-line tool
+2. **GitHub Repository**: Clone or fork https://github.com/shoonyee/django_oidc_vue.git
+3. **SSH Deploy Key**: For private repositories
+4. **External Database**: MySQL or PostgreSQL accessible from OpenShift
+5. **Project Access**: Access to an OpenShift project/namespace
 
-2. **Start frontend with npm:**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+### Step 1: Set Up SSH Authentication (For Private Repositories)
 
-### Using Start Scripts
+If your repository is private, set up SSH authentication:
 
 ```bash
-# Start all services
-./start.sh
+# Generate SSH key pair
+ssh-keygen -t rsa -b 4096 -f django-oidc-vue-key
 
-# Stop all services
-./stop.sh
+# Add the public key (django-oidc-vue-key.pub) as a Deploy Key to your GitHub repository:
+# Go to: GitHub Repository → Settings → Deploy keys → Add deploy key
+# Copy contents of django-oidc-vue-key.pub
+
+# Add the private key to OpenShift as a secret
+oc create secret generic django-oidc-vue-ssh-key \
+  --from-file=ssh-privatekey=./django-oidc-vue-key \
+  --type=kubernetes.io/ssh-auth
 ```
+
+### Step 2: Switch to Your OpenShift Project
+
+```bash
+# Switch to your project
+oc project your-project-name
+
+# Or create a new project
+oc new-project your-project-name
+```
+
+### Step 3: Deploy Backend
+
+The backend is in the `backend/` subdirectory and uses the `backend/Dockerfile`.
+
+```bash
+# Create backend app from subdirectory
+oc new-app https://github.com/shoonyee/django_oidc_vue.git \
+  --context-dir=backend \
+  --name=app-backend \
+  --strategy=docker
+
+# For private repositories, use SSH URL
+oc new-app git@github.com:shoonyee/django_oidc_vue.git \
+  --context-dir=backend \
+  --name=app-backend \
+  --strategy=docker
+```
+
+**Configure the build to use SSH key (for private repos):**
+
+```bash
+# Edit the BuildConfig
+oc edit bc/app-backend
+
+# Update the source section to include the SSH secret:
+# source:
+#   git:
+#     uri: 'git@github.com:shoonyee/django_oidc_vue.git'
+#   sourceSecret:
+#     name: django-oidc-vue-ssh-key
+#   type: Git
+#   contextDir: backend
+
+# Start a new build
+oc start-build app-backend
+```
+
+**Configure environment variables for database:**
+
+```bash
+# Set database configuration
+oc set env deployment/app-backend \
+  DB_ENGINE=mysql \
+  DB_NAME=your_database_name \
+  DB_USER=your_database_user \
+  DB_PASSWORD=your_database_password \
+  DB_HOST=your_database_host \
+  DB_PORT=3306 \
+  MODE=PROD \
+  SECRET_KEY=your-secret-key-here \
+  DEBUG=False
+
+# Set OIDC configuration
+oc set env deployment/app-backend \
+  OIDC_CLIENT_ID=your-client-id \
+  OIDC_CLIENT_SECRET=your-client-secret \
+  OIDC_AUTHORIZATION_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/authorize \
+  OIDC_TOKEN_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/token \
+  OIDC_USER_ENDPOINT=https://shibboleth.umich.edu/idp/profile/oidc/userinfo \
+  OIDC_JWKS_ENDPOINT=https://shibboleth.umich.edu/oidc/keyset.jwk
+
+# Set CORS origins (update with your actual frontend URL after deployment)
+oc set env deployment/app-backend \
+  CORS_ALLOWED_ORIGINS=https://your-frontend-route.apps.openshift.com,https://your-backend-route.apps.openshift.com
+```
+
+**Create a route to expose backend:**
+
+```bash
+# Create route for backend
+oc expose service/app-backend
+
+# Get the backend URL
+oc get route app-backend
+```
+
+### Step 4: Deploy Frontend
+
+The frontend is in the `frontend/` subdirectory. **Important:** The frontend must be built locally first, then the built files deployed.
+
+#### Option A: Build Locally and Deploy (Recommended)
+
+```bash
+# Clone the repository locally
+git clone https://github.com/shoonyee/django_oidc_vue.git
+cd django_oidc_vue/frontend
+
+# Update vite.config.js with backend URL
+# Edit vite.config.js and update the proxy target to your OpenShift backend URL
+# Or for production, update API base URL to point to backend route
+
+# Build production bundle
+npm install
+npm run build
+
+# Create a new app from the current directory with built files
+cd ..
+oc new-app frontend/ \
+  --name=app-frontend \
+  --strategy=docker
+```
+
+#### Option B: Deploy from GitHub (Advanced)
+
+For automated builds from GitHub, you need a custom build process since the frontend requires `npm run build`:
+
+```bash
+# Create frontend app from subdirectory
+oc new-app https://github.com/shoonyee/django_oidc_vue.git \
+  --context-dir=frontend \
+  --name=app-frontend \
+  --strategy=docker
+
+# For private repositories
+oc new-app git@github.com:shoonyee/django_oidc_vue.git \
+  --context-dir=frontend \
+  --name=app-frontend \
+  --strategy=docker
+
+# Configure SSH key for private repos
+oc edit bc/app-frontend
+# Add sourceSecret as shown in backend section
+```
+
+**Note:** This requires the `dist/` folder to be committed to the repository, which is not recommended. Use Option A for production deployments.
+
+**Create a route to expose frontend:**
+
+```bash
+# Create route for frontend
+oc expose service/app-frontend
+
+# Get the frontend URL
+oc get route app-frontend
+```
+
+### Step 5: Update Frontend Configuration
+
+After deploying both apps, update the frontend to point to the correct backend URL:
+
+```bash
+# Get backend route URL
+BACKEND_URL=$(oc get route app-backend -o jsonpath='{.spec.host}')
+echo "Backend URL: https://$BACKEND_URL"
+
+# Update frontend environment variable or rebuild with correct backend URL
+# You may need to update vite.config.js locally and redeploy
+```
+
+### Step 6: Update Backend CORS Settings
+
+Update the backend's CORS allowed origins to include the frontend URL:
+
+```bash
+# Get frontend route URL
+FRONTEND_URL=$(oc get route app-frontend -o jsonpath='{.spec.host}')
+
+# Update backend CORS settings
+oc set env deployment/app-backend \
+  CORS_ALLOWED_ORIGINS=https://$FRONTEND_URL,https://$BACKEND_URL
+```
+
+### Step 7: Run Database Migrations
+
+```bash
+# Run migrations in backend pod
+oc get pods | grep app-backend
+oc rsh <backend-pod-name>
+python manage.py migrate
+exit
+```
+
+### Complete Deployment Workflow
+
+Here's a complete example deploying both apps:
+
+```bash
+# 1. Set up project
+oc project your-project-name
+
+# 2. Deploy backend from GitHub subdirectory
+oc new-app https://github.com/shoonyee/django_oidc_vue.git \
+  --context-dir=backend \
+  --name=app-backend \
+  --strategy=docker
+
+# 3. Configure backend environment
+oc set env deployment/app-backend \
+  DB_ENGINE=mysql \
+  DB_NAME=your_db \
+  DB_USER=your_user \
+  DB_PASSWORD=your_password \
+  DB_HOST=your_db_host \
+  DB_PORT=3306 \
+  MODE=PROD \
+  SECRET_KEY=$(openssl rand -base64 32) \
+  DEBUG=False
+
+# 4. Expose backend
+oc expose service/app-backend
+
+# 5. Build frontend locally
+git clone https://github.com/shoonyee/django_oidc_vue.git
+cd django_oidc_vue/frontend
+npm install
+npm run build
+
+# 6. Update frontend config with backend URL
+BACKEND_URL=$(oc get route app-backend -o jsonpath='{.spec.host}')
+# Update vite.config.js or environment config with backend URL
+
+# 7. Deploy frontend
+cd ..
+oc new-app frontend/ --name=app-frontend --strategy=docker
+
+# 8. Expose frontend
+oc expose service/app-frontend
+
+# 9. Get URLs
+echo "Frontend: https://$(oc get route app-frontend -o jsonpath='{.spec.host}')"
+echo "Backend: https://$(oc get route app-backend -o jsonpath='{.spec.host}')"
+
+# 10. Update backend CORS
+oc set env deployment/app-backend \
+  CORS_ALLOWED_ORIGINS=https://$(oc get route app-frontend -o jsonpath='{.spec.host}')
+
+# 11. Run migrations
+oc rsh $(oc get pods -l app=app-backend -o name | head -1)
+python manage.py migrate
+exit
+```
+
+### Monitoring and Troubleshooting
+
+```bash
+# View backend logs
+oc logs -f deployment/app-backend
+
+# View frontend logs
+oc logs -f deployment/app-frontend
+
+# Check pod status
+oc get pods
+
+# Describe pod for issues
+oc describe pod <pod-name>
+
+# Access backend shell
+oc rsh <backend-pod-name>
+
+# Check build logs
+oc logs -f bc/app-backend
+oc logs -f bc/app-frontend
+
+# Trigger rebuild
+oc start-build app-backend
+oc start-build app-frontend
+```
+
+### Important Configuration Notes
+
+1. **Backend Environment Variables**: Must be set in OpenShift, not in `.env` file
+2. **Frontend API URL**: Update `vite.config.js` to point to OpenShift backend route
+3. **Database Connection**: Backend must be able to reach external database
+4. **CORS Settings**: Must include both frontend and backend URLs
+5. **HTTPS**: OpenShift routes use HTTPS by default
+6. **Build Context**: Use `--context-dir` to specify subdirectory for each app
 
 ## API Endpoints
 
@@ -257,99 +549,139 @@ ADMIN_EMAILS=admin@example.com,admin2@example.com
 
 The application uses OIDC (OpenID Connect) authentication with U-M Shibboleth. **There is no custom login interface** - users are automatically redirected to U-M's official login page when authentication is required.
 
-### How It Works
+### Development Mode (MODE=LOCAL)
 
-1. **No Custom Login**: The frontend has no login forms or custom authentication
-2. **Automatic Redirects**: When accessing protected routes, users are automatically sent to U-M Shibboleth
-3. **Seamless Integration**: After successful U-M authentication, users are redirected back to the app
+For local development, set `MODE=LOCAL` in your `.env` file to use mock authentication:
+- No OIDC redirects
+- Mock user is automatically authenticated
+- Bypasses U-M Shibboleth for local testing
+
+### Production Mode (MODE=PROD)
+
+In production, set `MODE=PROD` and configure OIDC credentials:
+1. **No Custom Login**: The frontend has no login forms
+2. **Automatic Redirects**: Users are sent to U-M Shibboleth for authentication
+3. **Seamless Integration**: After U-M authentication, users return to the app
 4. **Session Management**: Django handles OIDC sessions automatically
 
-### U-M Shibboleth OIDC Configuration
+### U-M Shibboleth Configuration
 
-The application is configured to work with U-M's official OIDC endpoints from [https://shibboleth.umich.edu/.well-known/openid-configuration](https://shibboleth.umich.edu/.well-known/openid-configuration):
-
-### Supported Scopes and Claims
-
-Based on U-M's OIDC configuration, the application supports:
-- **Scopes**: `openid`, `email`, `profile`, `eduperson`, `edumember`
-- **Claims**: Standard OIDC claims plus U-M specific attributes like `eduperson_principal_name`, `eduperson_affiliation`, `edumember_is_member_of`
-
-### Configuration
-
-Update the following environment variables in `backend/.env`:
+The application uses U-M's OIDC endpoints from [https://shibboleth.umich.edu/.well-known/openid-configuration](https://shibboleth.umich.edu/.well-known/openid-configuration)
 
 **Note**: You'll need to register your application with U-M IT to obtain the client ID and secret.
-
-**.env**, you can set **MODE** to **LOCAL** to use a mocked user for local development.
 
 ## Development
 
 ### Backend Development
 
-- The Django backend uses Django REST Framework for API endpoints
-- Models are defined in `backend/api/models.py`
-- Views and serializers are in `backend/api/views.py` and `backend/api/serializers.py`
-- Admin interface is available at `/admin/` for data management
-- OIDC authentication is handled by `mozilla-django-oidc`
-- Database connections are configured via environment variables
+- Django REST Framework for API endpoints
+- Models defined in `backend/api/models.py`
+- Views and serializers in `backend/api/views.py` and `backend/api/serializers.py`
+- Admin interface at `/admin/` for data management
+- OIDC authentication handled by `mozilla-django-oidc`
+- Database connections configured via environment variables
 
 ### Frontend Development
 
 - Built with Vue 3 Composition API
-- Uses Vuetify 3 for Material Design components
+- Vuetify 3 for Material Design components
 - State management with Pinia
 - Routing with Vue Router 4
 - HTTP requests with Axios
-- Automatic OIDC redirects for authentication
-
-## Deployment
-
-### Backend Deployment
-
-1. Set `DEBUG=False` in production
-2. Use external production database (MySQL or PostgreSQL)
-3. Configure static files with WhiteNoise
-4. Set up proper CORS settings for production domains
-5. Ensure HTTPS is enabled for OIDC security
-6. Use production-grade database credentials
-
-### Frontend Deployment
-
-1. Build the production version:
-   ```bash
-   npm run build
-   ```
-2. Deploy the `dist/` folder to your web server
-3. Configure API proxy settings for production
-
-### Database Deployment Considerations
-
-- **Connection Security**: Use SSL/TLS connections to production databases
-- **Connection Pooling**: Configure appropriate connection pool sizes
-- **Backup Strategy**: Ensure your external database has proper backup procedures
-- **Monitoring**: Monitor database connection health and performance
-- **Scaling**: Plan for database scaling as your application grows
+- Vite proxy for API calls during development
 
 ## Troubleshooting
 
-### Database Connection Issues
+### Backend Issues
 
-1. **Check .env file**: Ensure all database variables are set correctly
-2. **Verify network access**: Confirm your application server can reach the database server
-3. **Check credentials**: Verify username, password, and database name
-4. **Port accessibility**: Ensure the database port is open and accessible
-5. **SSL requirements**: Some databases require SSL connections
+**Database Connection Errors:**
+- Check `backend/.env` file for correct database credentials
+- Verify network access to database server
+- Ensure database port is accessible
+- Check database user permissions
 
-### Common Issues
+**Docker Compose Issues:**
+- Port conflicts: Run `docker compose down` first
+- Permission errors: Check file permissions on Docker volumes
+- Container won't start: Check logs with `docker compose logs`
 
-- **"No module named 'pymysql'"**: Install MySQL dependencies with `pip install -r requirements.txt`
-- **"No module named 'psycopg2'"**: Install PostgreSQL dependencies with `pip install -r requirements.txt`
-- **Connection refused**: Check database server status and network connectivity
-- **Authentication failed**: Verify database credentials and user permissions
+### Frontend Issues
+
+**Port 8088 Already in Use:**
+- Stop other processes: `pkill -f "npm run dev"`
+- Check Docker containers: `docker ps`
+
+**Axios 500 Errors:**
+- Verify backend is running on port 8080
+- Check backend logs for errors
+- Verify database connection
+
+**Build Errors:**
+- Delete `node_modules` and run `npm install` again
+- Clear npm cache: `npm cache clean --force`
+
+### Start/Stop Script Issues
+
+**Backend won't start:**
+- Ensure Docker Compose is running: `docker compose ps`
+- Check backend logs: `cd backend/dockercompose && docker compose logs`
+
+**Frontend won't start:**
+- Check for port conflicts on 8088
+- Verify `node_modules` exists: `cd frontend && npm install`
+
+## Summary
+
+### Local Development vs OpenShift Deployment
+
+| Purpose | Backend | Frontend |
+|---------|---------|----------|
+| **Local Development (Scripts)** | Use `./start.sh` | Use `./start.sh` |
+| **Local Development (Manual)** | `cd backend/dockercompose && docker compose up` | `cd frontend && npm run dev` |
+| **OpenShift Deployment** | `oc new-app` with `--context-dir=backend` | Build locally → `oc new-app frontend/` |
+
+### Key Differences
+
+#### Local Development
+- **Backend**: Uses `backend/dockercompose/Dockerfile` and `docker-compose.yml`
+- **Frontend**: Runs directly with `npm run dev` (port 8088)
+- **Database**: Connect to external database via `backend/.env`
+- **Hot Reload**: Enabled for both backend and frontend
+- **Authentication**: Use `MODE=LOCAL` for mock authentication
+
+#### OpenShift Deployment
+- **Backend**: Uses `backend/Dockerfile` with `oc new-app` and `--context-dir=backend`
+- **Frontend**: Build locally first (`npm run build`), then deploy with `oc new-app frontend/`
+- **Database**: Configure via `oc set env deployment/app-backend`
+- **Repository Structure**: Deploy from subdirectories of same GitHub repo
+- **SSH Authentication**: Required for private repositories
+- **Routes**: Expose both apps with `oc expose service`
+- **CORS**: Update backend to include frontend route URL
+- **Configuration**: Frontend must be updated with backend route URL
+
+### Quick Command Reference
+
+```bash
+# Local Development
+./start.sh                          # Start both services
+./stop.sh                           # Stop both services
+
+# OpenShift Deployment
+oc new-app https://github.com/shoonyee/django_oidc_vue.git \
+  --context-dir=backend --name=app-backend --strategy=docker
+
+oc new-app frontend/ --name=app-frontend --strategy=docker
+
+# Configuration
+oc set env deployment/app-backend DB_HOST=... DB_NAME=...
+oc expose service/app-backend
+oc expose service/app-frontend
+```
 
 ## Support
 
 For issues related to:
 - **Database connectivity**: Check your `.env` configuration and network access
 - **OIDC authentication**: Contact U-M IT for Shibboleth configuration
-- **Application functionality**: Review the API documentation and check logs
+- **Docker/OpenShift**: Review container logs and configurations
+- **Application functionality**: Check API documentation and application logs
